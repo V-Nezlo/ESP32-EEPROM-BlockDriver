@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------
 //  File        : EepromBlock.hpp
 //  Created     : 04.04.2022
-//  Modified    : 06.04.2022
+//  Modified    : 08.04.2022
 //  Author      : V-Nezlo (vlladimirka@gmail.com)
 //  Description : Block driver for ESP32 Eeprom
 //-----------------------------------------------------------------------
@@ -10,7 +10,6 @@
 #define EEPROM_BLOCK_DRIVER_HPP_
 
 #include <EEPROM.h>
-#include "assert.h"
 
 template <size_t BlockCount, size_t EepromSize = 512>
 class EepromBlock {
