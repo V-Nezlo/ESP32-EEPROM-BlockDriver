@@ -1,52 +1,63 @@
 //-----------------------------------------------------------------------
 //  File        : SimpleExample.ino
 //  Created     : 08.04.2022
-//  Modified    : 08.04.2022
+//  Modified    : 21.04.2022
 //  Author      : V-Nezlo (vlladimirka@gmail.com)
 //  Description : Block Driver Example
 //-----------------------------------------------------------------------
-#include <Arduino.h>
-#include "EepromBlock.hpp"
 
-struct Data
-{
-    char name[32];
-    uint32_t id;
-    float level;
+#include "EepromBlock.hpp"
+#include <Arduino.h>
+
+struct WiFiCred {
+	char ssid[32];
+	char pass[64];
+};
+
+struct Internal {
+	uint16_t counter;
+	uint32_t seconds;
+};
+
+struct BrokenData {
+	uint8_t nevermind;
 };
 
 void setup()
-{
-    Serial.begin(115200);
-    String outMessage;
-    Data data
-    {
-        "Giorno Giovanna",
-        123456,
-        75.2
-    };
+{	
+	delay(3000); // Delay for serialmonitor init
+	EepromBlock<2> eepromBlock;
 
-    EepromBlock<1> eepromBlock;
-    eepromBlock.createBlock("Data", sizeof(Data));
+	// Shuffle the order of these functions to see how they work.
+	eepromBlock.createBlock("internal", sizeof(Internal));
+	eepromBlock.createBlock("wifi", sizeof(WiFiCred));
+	eepromBlock.createBlock("broken", sizeof(BrokenData)); // Return error in log, pool overhead
+	// Shuffling will result in loss of data in memory
 
-    Data receivedData;
-    if (eepromBlock.readBlock("Data", &receivedData)) {
-        outMessage = "Data founded in EEPROM, and name of the character is: " + String(receivedData.name);
-        Serial.println(outMessage);
-        while(1) {} // infinite loop
-    } else {
-        outMessage = "Data not founded in EEPROM";
-        Serial.println(outMessage);
-    }
+	// Structures
+	WiFiCred wifiParams;
+	Internal internalParams;
+	BrokenData brokenDataParams;
 
-    eepromBlock.writeBlock("Data", &data);
-    Serial.println("Write test Data in EEPROM");
+	if (eepromBlock.readBlock("wifi", &wifiParams)) { // If read successfully
+		ESP_LOGI("wifi", "wifi successfully readed, password is %s and ssid is %s", wifiParams.pass, wifiParams.ssid);
+	} else { // Writing data
+		strcpy(wifiParams.ssid, "THIS IS SEED");
+		strcpy(wifiParams.pass, "THIS IS PASSWORD");
+		eepromBlock.writeBlock("wifi", &wifiParams);
+	}
 
-    if (eepromBlock.readBlock("Data", &receivedData)) {
-        Serial.println("Data was successfully written");
-    } else {
-        Serial.println("Critical failure");
-    }
+	if (eepromBlock.readBlock("internal", &internalParams)) {
+		ESP_LOGI("internal", "Internal params successfully readed and counter = %d , seconds = %d ", internalParams.counter, internalParams.seconds);
+	} else {
+		internalParams.counter = 1337;
+		internalParams.seconds = 2882;
+		eepromBlock.writeBlock("internal", &internalParams);
+	}
+
+	// this returns errors
+	eepromBlock.readBlock("broken", &brokenDataParams);
+	eepromBlock.writeBlock("broken", &brokenDataParams);
 
 }
 

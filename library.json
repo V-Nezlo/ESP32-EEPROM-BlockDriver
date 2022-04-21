@@ -1,0 +1,22 @@
+{
+  "name": "ESP32-EEPROM-BlockDriver",
+  "version": "1.0.0",
+  "description": "Driver for non-volatile memory providing block access",
+  "keywords": "ESP32, EEPROM",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/V-Nezlo/ESP32-EEPROM-BlockDriver.git"
+  },
+  "authors":
+  [
+    {
+      "name": "V-Nezlo",
+      "email": "vlladimirka@gmail.com",
+      "maintainer": true
+    }
+  ],
+  "license": "AGPL-3.0",
+  "frameworks": "Arduino",
+  "platforms": "*"
+}
