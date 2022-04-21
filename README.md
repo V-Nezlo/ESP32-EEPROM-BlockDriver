@@ -1,5 +1,64 @@
 # ESP32 EEPROM Block Driver
 
+EEPROM block access driver for ESP32
+The main task of the driver is to organize a convenient interface for working with non-volatile memory from anywhere in the program.
+The driver is based on a "block" - an area of dedicated non-volatile memory for storing information.
+
+## Capabilities
+
+* Create "blocks" of arbitrary size, read and write them
+* Eliminated erroneous reading, block crossing, block re-creation
+* The interface provides an access point to blocks anywhere in the program
+* Block record integrity control
+
+## Peculiarities
+
+This driver does not create a "block" structure inside non-volatile memory, it creates a mask that is superimposed on this memory. The block data looks like this:
+
+```sh
+char name - Block name
+size_t address - Block start address
+size_t size - Size of block
+uint16_t crc - Crc
+```
+Of this data, only crc gets into non-volatile memory, immediately after the block storage object. The mask consists of the block address and its size.
+
+# Usage
+
+```sh
+EepromBlock <size_t BlockCount, size_t EepromSize = 512>
+```
+Constructor without arguments, the template specifies the number of blocks and the size of the EEPROM area
+
+```sh
+bool createBlock(const char *aName, size_t aSize)
+```
+Creates a block with the desired name and size. Returns false if a block with the same name already exists,
+the length of the block name is greater than the maximum possible or if the block pool is full.
+Otherwise returns true and creates a block
+
+```sh
+bool writeBlock(const char *aName, const void* aData) const
+```
+Writes data to the block if the block exists. Otherwise returns false. The size of the data must match the size of the created block
+
+```sh
+bool readBlock(const char *aName, void* aData) const
+```
+Reads data from a block. Returns false if the block was not found or the CRC did not match.
+
+## Using example
+
+See SimpleExample.cpp in examples folder
+
+## Usage features
+
+The key point is that the user does not change the order in which the block creation functions are called. There is no block re-allocation in the driver, so mixing block creation functions with each other is unacceptable. The driver does not have an EEPROM cleanup function, because if a block is not found in memory, it is not read.
+
+----------------------------------------------------------------------------------------------------
+
+# ESP32 EEPROM Block Driver
+
 Драйвер, организующий блоковый доступ к памяти EEPROM для ESP32
 Главная задача драйвера - организовать удобный интерфейс работы с энергонезависимой памятью из любой точки программы.
 Основу драйвера составляет "блок" - область выделенной энергонезависимой памяти для хранения там произвольной информации.

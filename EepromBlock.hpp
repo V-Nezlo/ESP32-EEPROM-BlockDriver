@@ -36,7 +36,7 @@ public:
 
 	bool createBlock(const char *aName, size_t aSize)
 	{
-		size_t nameLength = strlen(aName) + 1; // Не забываем про нуль-терминатор
+		size_t nameLength = strlen(aName) + 1; // Null-terminator
 
 		if (nameLength > maxNameLength) {
 			ESP_LOGE(tag, "Creating block %s return error: block name too long", aName);
@@ -59,13 +59,13 @@ public:
 		blocks[blockCounter].crc = crc16(aName, nameLength);
 		
 		blockCounter += 1;
-		bytesCount += aSize + 2; // 2 дополнительных байта CRC
+		bytesCount += aSize + 2; // 2 bytes of CRC
 		return true;
 	}
 
 	bool writeBlock(const char *aName, const void* aData) const
 	{
-		// Найдем номер нашего блока
+		// Find block
 		uint16_t blockNum = findBlockByName(aName);
 
 		if (blockNum == blockNotFoundMark) {
@@ -76,7 +76,7 @@ public:
 		size_t blockSize = blocks[blockNum].size;
 		size_t desiredAddress = blocks[blockNum].address;
 
-		// Если блок есть - записываем в него данные и crc
+		// If block exist - write data and crc
 		EEPROM.writeBytes(desiredAddress, aData, blockSize);
 		EEPROM.writeUShort(desiredAddress + blockSize, blocks[blockNum].crc);
 		EEPROM.commit();
@@ -98,13 +98,13 @@ public:
 		size_t desiredAddress = blocks[blockNum].address;
 		uint16_t receivedCrc;
 		EEPROM.get(desiredAddress + blockSize, receivedCrc);
-		// Если crc не сошелся - возвращаем false
+		// If crc not correct - return false
 		if (blocks[blockNum].crc != receivedCrc) {
 			ESP_LOGE(tag, "Reading block %s return error: CRC does not match", aName);
 			return false;
 		} 
 
-		// Если crc сошелся - забираем из блока данные
+		// If crc correct - read data
 		EEPROM.readBytes(desiredAddress, aData, blockSize);
 		ESP_LOGI(tag, "Block %s read successful", aName);
 		return true;
