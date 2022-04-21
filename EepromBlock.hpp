@@ -16,6 +16,7 @@ class EepromBlock {
 
 	static constexpr size_t maxNameLength{20};
 	static constexpr uint16_t blockNotFoundMark{0xFFFF};
+	static constexpr char tag[]{"EepromBlock"};
 
 	struct BlockParams {
 		char name[maxNameLength];
@@ -37,22 +38,21 @@ public:
 	{
 		size_t nameLength = strlen(aName) + 1; // Не забываем про нуль-терминатор
 
-		// Проверка на длину имени
 		if (nameLength > maxNameLength) {
+			ESP_LOGE(tag, "Creating block %s return error: block name too long", aName);
 			return false;
 		}
 
-		// Проверка на заполненность пула блоков
 		if (blockCounter >= BlockCount) {
+			ESP_LOGE(tag, "Creating block %s return error: block pool is full", aName);
 			return false;
 		}
 
-		// Проверка на наличие ранее созданного блока
 		if (findBlockByName(aName) != blockNotFoundMark) {
+			ESP_LOGE(tag, "Creating block %s return error: block already exist", aName);
 			return false;
 		}
 
-		// Создаем блок
 		memcpy(blocks[blockCounter].name, aName, nameLength);
 		blocks[blockCounter].address = bytesCount;
 		blocks[blockCounter].size = aSize;
@@ -69,6 +69,7 @@ public:
 		uint16_t blockNum = findBlockByName(aName);
 
 		if (blockNum == blockNotFoundMark) {
+			ESP_LOGE(tag, "Writing block %s return error: block not found", aName);
 			return false;
 		}
 
@@ -79,29 +80,33 @@ public:
 		EEPROM.writeBytes(desiredAddress, aData, blockSize);
 		EEPROM.writeUShort(desiredAddress + blockSize, blocks[blockNum].crc);
 		EEPROM.commit();
+		ESP_LOGI(tag, "Block %s write successful", aName);
 		return true;
 	}
 
 	bool readBlock(const char *aName, void* aData) const
 	{
-		// Найдем номер нашего блока
+
 		uint16_t blockNum = findBlockByName(aName);
 
 		if (blockNum == blockNotFoundMark) {
+			ESP_LOGE(tag, "Reading block %s return error: block not found", aName);
 			return false;
 		}
-		// Если блок есть - соберем с него информацию
+
 		size_t blockSize = blocks[blockNum].size;
 		size_t desiredAddress = blocks[blockNum].address;
 		uint16_t receivedCrc;
 		EEPROM.get(desiredAddress + blockSize, receivedCrc);
 		// Если crc не сошелся - возвращаем false
 		if (blocks[blockNum].crc != receivedCrc) {
+			ESP_LOGE(tag, "Reading block %s return error: CRC does not match", aName);
 			return false;
 		} 
 
 		// Если crc сошелся - забираем из блока данные
 		EEPROM.readBytes(desiredAddress, aData, blockSize);
+		ESP_LOGI(tag, "Block %s read successful", aName);
 		return true;
 	}
 
